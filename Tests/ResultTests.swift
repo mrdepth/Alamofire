@@ -152,7 +152,7 @@ class ResultTestCase: BaseTestCase {
         let value = "success value"
 
         // When
-        let result1 = Result(value: { value })
+        let result1 = Result(catching: { value })
         let result2 = Result { value }
 
         // Then
@@ -167,7 +167,7 @@ class ResultTestCase: BaseTestCase {
         struct ResultError: Error {}
 
         // When
-        let result1 = Result(value: { throw ResultError() })
+        let result1 = Result(catching: { throw ResultError() })
         let result2 = Result { throw ResultError() }
 
         // Then
@@ -184,7 +184,7 @@ class ResultTestCase: BaseTestCase {
         let result = Result<String>.success("success value")
 
         // When
-        let unwrappedValue = try? result.unwrap()
+        let unwrappedValue = try? result.get()
 
         // Then
         XCTAssertEqual(unwrappedValue, "success value")
@@ -199,7 +199,7 @@ class ResultTestCase: BaseTestCase {
 
         // Then
         do {
-            _ = try result.unwrap()
+            _ = try result.get()
             XCTFail("result unwrapping should throw the failure error")
         } catch {
             XCTAssertTrue(error is ResultError)
@@ -254,7 +254,7 @@ class ResultTestCase: BaseTestCase {
         let result = Result<String>.success("success value")
 
         // When
-        let mappedResult = result.flatMap { _ in throw TransformError() }
+        let mappedResult = result.flatMap { _ in Result {throw TransformError() } }
 
         // Then
         if let error = mappedResult.error {
@@ -271,7 +271,7 @@ class ResultTestCase: BaseTestCase {
         let result = Result<String>.failure(ResultError())
 
         // When
-        let mappedResult = result.flatMap { _ in throw TransformError() }
+        let mappedResult = result.flatMap { _ in Result {throw TransformError()} }
 
         // Then
         if let error = mappedResult.error {
@@ -320,7 +320,7 @@ class ResultTestCase: BaseTestCase {
         let result: Result<String> = .failure(ResultError())
 
         // When
-        let mappedResult = result.flatMapError { OtherError(error: $0) }
+        let mappedResult = result.flatMapError { .failure(OtherError(error: $0)) }
 
         // Then
         if let error = mappedResult.error {
@@ -341,7 +341,7 @@ class ResultTestCase: BaseTestCase {
         let result: Result<String> = .failure(ResultError())
 
         // When
-        let mappedResult = result.flatMapError { try OtherError(error: $0) }
+        let mappedResult = result.flatMapError { error in Result {throw try OtherError(error: error)} }
 
         // Then
         if let error = mappedResult.error {
@@ -467,7 +467,7 @@ class ResultTestCase: BaseTestCase {
         // When
         let endResult = result
             .map { _ in "second" }
-            .flatMap { _ in "third" }
+            .flatMap { _ in .success("third") }
             .withValue { if $0 == "third" { string = "fourth" } }
             .ifSuccess { success = true }
 

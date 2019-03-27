@@ -154,7 +154,7 @@ extension DataResponse {
                                data: data,
                                metrics: metrics,
                                serializationDuration: serializationDuration,
-                               result: result.flatMap(transform))
+                               result: result.flatMap { value in Result { try transform(value) } })
     }
 
     /// Evaluates the specified closure when the `DataResponse` is a failure, passing the unwrapped error as a parameter.
@@ -193,7 +193,8 @@ extension DataResponse {
                             data: data,
                             metrics: metrics,
                             serializationDuration: serializationDuration,
-                            result: result.flatMapError(transform))
+                            result: result.flatMapError{ error in Result { throw try transform(error) }}
+        )
     }
 }
 
@@ -345,7 +346,7 @@ extension DownloadResponse {
             resumeData: resumeData,
             metrics: metrics,
             serializationDuration: serializationDuration,
-            result: result.flatMap(transform)
+            result: result.flatMap { value in Result { try transform(value) } }
         )
     }
 
@@ -390,7 +391,7 @@ extension DownloadResponse {
             resumeData: resumeData,
             metrics: metrics,
             serializationDuration: serializationDuration,
-            result: result.flatMapError(transform)
+            result: result.flatMapError{ error in Result { throw try transform(error) }}
         )
     }
 }
